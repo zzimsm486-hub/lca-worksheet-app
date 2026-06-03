@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LCA 실습 웹앱</title>
+<style>
+  :root {
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --purple-mid: #AFA9EC;
+    --orange: #993C1D;
+    --orange-light: #FAECE7;
+    --orange-mid: #F0997B;
+    --teal: #0F6E56;
+    --teal-light: #E1F5EE;
+    --teal-mid: #5DCAA5;
+    --rose: #993556;
+    --rose-light: #FBEAF0;
+    --bg: #ffffff;
+    --bg-sec: #f7f7f7;
+    --bg-ter: #efefef;
+    --text: #1a1a1a;
+    --text-sec: #555;
+    --border: rgba(0,0,0,0.12);
+    --border-sec: rgba(0,0,0,0.2);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); }
+
+  .app { max-width: 800px; margin: 0 auto; padding: 0 0 4rem; }
+
+  /* ── 상단 헤더 ── */
+  .app-header {
+    padding: 1.25rem 1.25rem 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .app-header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .app-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--purple); display: flex; align-items: center; justify-content: center;
+  }
+  .app-logo i { color: #fff; font-size: 18px; }
+  .app-title { font-size: 16px; font-weight: 500; color: var(--text); }
+  .app-sub { font-size: 12px; color: var(--text-sec); }
+
+  /* ── 탭 네비 ── */
+  .tab-nav {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    display: flex; gap: 0; padding: 0 1rem;
+    overflow-x: auto;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 11px 14px; font-size: 13px; font-weight: 500;
+    border: none; background: none; cursor: pointer;
+    color: var(--text-sec);
+    border-bottom: 2px solid transparent; margin-bottom: -0.5px;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .tab-btn.active { color: var(--purple); border-bottom-color: var(--purple); }
+  .tab-btn i { font-size: 15px; }
+
+  /* ── 패널 헤더 ── */
+  .panel-header {
+    padding: 1.5rem 1.25rem 1rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 20px; margin-bottom: 8px;
+  }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+  .badge-teal   { background: var(--teal-light);   color: var(--teal); }
+  .panel-title { font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.3; }
+  .panel-sub   { font-size: 13px; color: var(--text-sec); margin-top: 4px; }
+
+  /* ── 패널 본문 ── */
+  .panel-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+  /* ── 섹션 타이틀 ── */
+  .section-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 500; color: var(--text-sec);
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px;
+  }
+  .section-label .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── 카드 ── */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .card-head {
+    padding: 10px 14px; font-size: 13px; font-weight: 500; color: #fff;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── 입력 ── */
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 12px; font-weight: 500; color: var(--text-sec); }
+  textarea {
+    width: 100%; border: 0.5px solid var(--border);
+    border-radius: var(--radius-md); padding: 8px 10px;
+    font-size: 14px; font-family: 'Noto Sans KR', sans-serif; resize: vertical;
+    background: var(--bg-sec); color: var(--text); min-height: 68px;
+    line-height: 1.6; transition: border-color .15s;
+  }
+  textarea:focus { outline: none; border-color: var(--purple); }
+  input[type="text"] {
+    width: 100%; border: 0.5px solid var(--border);
+    border-radius: var(--radius-md); padding: 7px 10px;
+    font-size: 14px; font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg-sec); color: var(--text); transition: border-color .15s;
+    height: 36px;
+  }
+  input[type="text"]:focus { outline: none; border-color: var(--purple); }
+
+  /* ── 2열 그리드 ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 540px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* ── 체크리스트 ── */
+  .checklist { display: flex; flex-direction: column; gap: 6px; }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-md);
+    background: var(--bg-sec); cursor: pointer; transition: background .12s;
+  }
+  .check-item:hover { background: var(--bg-ter); }
+  .check-item.checked { background: var(--teal-light); }
+  .check-box {
+    width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+    border: 1.5px solid var(--border-sec);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .12s, border-color .12s; color: transparent;
+  }
+  .check-item.checked .check-box { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .check-text { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+  .check-item.checked .check-text { color: var(--teal); }
+
+  /* ── 태그 ── */
+  .tag-area { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px; background: var(--bg-sec); border-radius: var(--radius-md); border: 0.5px solid var(--border); min-height: 42px; }
+  .tag {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 10px 3px 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    background: var(--purple-light); color: var(--purple);
+  }
+  .tag-del { border: none; background: none; cursor: pointer; color: var(--purple-mid); font-size: 15px; line-height: 1; padding: 0 2px; }
+  .tag-input {
+    border: none; background: transparent;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text); outline: none; width: 130px; min-width: 80px;
+  }
+  .tag-hint { font-size: 11px; color: var(--text-sec); margin-top: 4px; }
+
+  /* ── 척도 ── */
+  .scale-row { display: flex; border: 0.5px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .scale-opt { flex: 1; }
+  .scale-opt input[type="radio"] { display: none; }
+  .scale-opt label {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 7px 4px; cursor: pointer; font-size: 11px; color: var(--text-sec);
+    background: var(--bg-sec); transition: background .12s, color .12s;
+    text-align: center; line-height: 1.3;
+    border-right: 0.5px solid var(--border); min-height: 50px; gap: 3px;
+  }
+  .scale-opt:last-child label { border-right: none; }
+  .scale-opt input[type="radio"]:checked + label { background: var(--teal-light); color: var(--teal); font-weight: 500; }
+
+  /* ── 강도 라디오 ── */
+  .strength-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .str-opt input[type="radio"] { display: none; }
+  .str-opt label {
+    padding: 4px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    border: 0.5px solid var(--border-sec);
+    color: var(--text-sec); background: var(--bg-sec); transition: background .12s, color .12s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .str-opt.weak input[type="radio"]:checked + label { background: var(--teal-light); color: var(--teal); border-color: var(--teal-mid); }
+  .str-opt.mid  input[type="radio"]:checked + label { background: var(--orange-light); color: var(--orange); border-color: var(--orange-mid); }
+  .str-opt.strong input[type="radio"]:checked + label { background: var(--purple-light); color: var(--purple); border-color: var(--purple-mid); }
+
+  /* ── 역할 선택 ── */
+  .role-row { display: flex; gap: 8px; margin-top: 4px; }
+  .role-opt input[type="radio"] { display: none; }
+  .role-opt label {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 14px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer;
+    border: 0.5px solid var(--border-sec);
+    color: var(--text-sec); background: var(--bg-sec); transition: background .12s, color .12s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .role-opt input[type="radio"]:checked + label { background: var(--purple-light); color: var(--purple); border-color: var(--purple-mid); font-weight: 500; }
+
+  /* ── 진행바 ── */
+  .progress-wrap { background: var(--bg-ter); border-radius: 6px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 6px; background: var(--teal); transition: width .3s; }
+
+  /* ── 버튼 ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 20px; border-radius: var(--radius-md); border: 0.5px solid var(--border-sec);
+    font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg); color: var(--text); transition: background .12s; width: 100%;
+  }
+  .btn:hover { background: var(--bg-sec); }
+  .btn-primary { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .btn-primary:hover { opacity: .88; background: var(--purple); }
+  .btn-success { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+  /* ── 강점·약점 행 ── */
+  .sw-row { display: grid; grid-template-columns: 76px 1fr 1fr; gap: 8px; align-items: start; }
+  .sw-label {
+    padding: 6px 0; border-radius: var(--radius-md); font-size: 12px; font-weight: 500;
+    text-align: center; margin-top: 2px;
+  }
+  @media (max-width: 500px) { .sw-row { grid-template-columns: 1fr; } .sw-label { text-align: left; padding: 4px 8px; } }
+
+  /* ── 질문 가이드 ── */
+  .guide-stage { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .guide-stage-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 14px; cursor: pointer;
+    font-size: 14px; font-weight: 500; color: #fff;
+    user-select: none;
+  }
+  .guide-stage-head .head-left { display: flex; align-items: center; gap: 8px; }
+  .guide-stage-head i.chevron { transition: transform .2s; font-size: 16px; }
+  .guide-stage-head.open i.chevron { transform: rotate(180deg); }
+  .guide-stage-body { display: none; }
+  .guide-stage-body.open { display: block; }
+  .guide-group { padding: 12px 14px; border-top: 0.5px solid var(--border); }
+  .guide-group-title { font-size: 11px; font-weight: 500; color: var(--text-sec); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+  .guide-q {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 7px 10px; margin-bottom: 5px;
+    background: var(--bg-sec); border-radius: var(--radius-md);
+    font-size: 13px; color: var(--text); line-height: 1.6;
+  }
+  .guide-q:last-child { margin-bottom: 0; }
+  .q-num {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; margin-top: 1px;
+  }
+  .tip-box {
+    margin: 0 14px 12px; padding: 10px 12px;
+    border-radius: var(--radius-md); font-size: 12.5px; line-height: 1.65;
+    color: var(--text-sec); background: var(--bg-sec);
+    border-left: 2px solid var(--border-sec);
+  }
+  .tip-box b { font-size: 11px; display: block; margin-bottom: 4px; color: var(--text); }
+
+  /* ── 테마 카드 ── */
+  .theme-card { background: var(--bg-sec); border-radius: var(--radius-lg); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .theme-card-head { display: flex; align-items: center; gap: 8px; }
+  .theme-num { width: 24px; height: 24px; border-radius: 50%; background: var(--purple-light); color: var(--purple); font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css" rel="stylesheet">
+
+<div class="app">
+  <!-- 헤더 -->
+  <div class="app-header">
+    <div class="app-header-top">
+      <div class="app-logo"><i class="ti ti-clipboard-text"></i></div>
+      <div>
+        <div class="app-title">LCA 생애진로사정 실습 워크시트</div>
+        <div class="app-sub">진로상담 실습 10주차 · 순천향대학교 교육대학원 상담교육전공</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <nav class="tab-nav" role="tablist">
+      <button class="tab-btn active" onclick="switchTab('ws1')" id="tab-ws1" role="tab"><i class="ti ti-clipboard-list"></i> WS 1 관찰기록</button>
+      <button class="tab-btn" onclick="switchTab('ws2')" id="tab-ws2" role="tab"><i class="ti ti-star"></i> WS 2 자기평가</button>
+      <button class="tab-btn" onclick="switchTab('ws3')" id="tab-ws3" role="tab"><i class="ti ti-bulb"></i> WS 3 주제분석</button>
+      <button class="tab-btn" onclick="switchTab('guide')" id="tab-guide" role="tab"><i class="ti ti-message-question"></i> 질문 가이드</button>
+    </nav>
+  </div>
+
+  <!-- ══════════ WS 1 ══════════ -->
+  <div id="panel-ws1" role="tabpanel">
+    <div class="panel-header">
+      <span class="badge badge-purple">WS 1</span>
+      <div class="panel-title">실습 관찰 기록지</div>
+      <div class="panel-sub">상담자 역할 시 작성 · LCA 4단계 전 구간</div>
+    </div>
+    <div class="panel-body">
+      <div class="grid2">
+        <div class="field"><label class="field-label">이름</label><input type="text" id="ws1-name" placeholder="작성자 이름"></div>
+        <div class="field"><label class="field-label">짝 이름 (내담자)</label><input type="text" id="ws1-pair" placeholder="내담자 이름"></div>
+      </div>
+
+      <!-- STAGE 01 -->
+      <div class="card">
+        <div class="card-head" style="background:#C4622D;"><i class="ti ti-briefcase"></i> STAGE 01 &nbsp;진로사정</div>
+        <div class="card-body">
+          <div class="sw-row" style="grid-template-columns:1fr;"><div class="field-label" style="margin-bottom:4px;">직업경험</div></div>
+          <div class="grid2">
+            <div class="field"><label class="field-label">주요 발언 (그대로 메모)</label><textarea id="s1-job-talk" rows="3" placeholder="내담자 표현 그대로..."></textarea></div>
+            <div class="field"><label class="field-label">포착된 패턴 / 감정 / 가치관</label><textarea id="s1-job-pat" rows="3" placeholder="반복 단어, 감정..."></textarea></div>
+          </div>
+          <div class="sw-row" style="grid-template-columns:1fr;margin-top:6px;"><div class="field-label" style="margin-bottom:4px;">교육훈련</div></div>
+          <div class="grid2">
+            <div class="field"><label class="field-label">주요 발언</label><textarea id="s1-edu-talk" rows="3" placeholder="좋았던/싫었던 기억..."></textarea></div>
+            <div class="field"><label class="field-label">포착된 패턴</label><textarea id="s1-edu-pat" rows="3" placeholder="선호 영역, 패턴..."></textarea></div>
+          </div>
+          <div class="sw-row" style="grid-template-columns:1fr;margin-top:6px;"><div class="field-label" style="margin-bottom:4px;">여가활동</div></div>
+          <div class="grid2">
+            <div class="field"><label class="field-label">주요 발언</label><textarea id="s1-lei-talk" rows="3" placeholder="쉬는 날 활동, 혼자/함께..."></textarea></div>
+            <div class="field"><label class="field-label">포착된 패턴</label><textarea id="s1-lei-pat" rows="3" placeholder="독립↔의존 단서..."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE 02 -->
+      <div class="card">
+        <div class="card-head" style="background:#C4622D;"><i class="ti ti-clock"></i> STAGE 02 &nbsp;일상적 하루</div>
+        <div class="card-body">
+          <div class="grid2">
+            <div class="field"><label class="field-label">아침 루틴 — 응답 메모</label><textarea id="s2-am-talk" rows="2" placeholder="스스로 일어남 / 깨워줌..."></textarea></div>
+            <div class="field"><label class="field-label">아침 루틴 — 독립↔의존 판단</label><textarea id="s2-am-pat" rows="2" placeholder="판단 메모..."></textarea></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label class="field-label">업무·학교 패턴 — 응답 메모</label><textarea id="s2-work-talk" rows="2" placeholder="출근 후 첫 행동..."></textarea></div>
+            <div class="field"><label class="field-label">업무·학교 패턴 — 체계↔임의 판단</label><textarea id="s2-work-pat" rows="2" placeholder="체계적 / 임의적..."></textarea></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label class="field-label">여가·저녁 — 응답 메모</label><textarea id="s2-eve-talk" rows="2" placeholder="퇴근 후 활동..."></textarea></div>
+            <div class="field"><label class="field-label">여가·저녁 — 규칙↔즉흥 판단</label><textarea id="s2-eve-pat" rows="2" placeholder="규칙적 / 즉흥적..."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE 03 -->
+      <div class="card">
+        <div class="card-head" style="background:#0F6E56;"><i class="ti ti-star"></i> STAGE 03 &nbsp;강점 및 약점</div>
+        <div class="card-body">
+          <div class="section-label"><span class="dot" style="background:#0F6E56"></span>강점</div>
+          <div id="strength-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          <div class="section-label" style="margin-top:10px;"><span class="dot" style="background:#993556"></span>약점</div>
+          <div id="weakness-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- STAGE 04 -->
+      <div class="card">
+        <div class="card-head" style="background:#534AB7;"><i class="ti ti-align-left"></i> STAGE 04 &nbsp;요약</div>
+        <div class="card-body">
+          <div class="field"><label class="field-label">반복된 단어·감정</label><textarea id="s4-repeat" rows="2" placeholder="직업·교육·여가 이야기에서 반복 등장한 표현..."></textarea></div>
+          <div class="field"><label class="field-label">핵심 욕구 (읽어낸 것)</label><textarea id="s4-need" rows="2" placeholder="'~할 때 좋았다 / 힘들었다' 패턴에서..."></textarea></div>
+          <div class="field"><label class="field-label">요약 멘트 (내담자 언어 그대로)</label><textarea id="s4-summary" rows="3" placeholder="내담자가 쓴 단어를 그대로 사용해서 요약..."></textarea></div>
+          <div class="field">
+            <label class="field-label">생애진로주제 키워드 (2~3개) — 입력 후 Enter</label>
+            <div class="tag-area" id="tag-area-ws1">
+              <input type="text" class="tag-input" id="tag-input-ws1" placeholder="키워드 입력 후 Enter">
+            </div>
+            <div class="tag-hint">예) 자율성, 관계지향, 성장추구</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveWS('ws1')"><i class="ti ti-device-floppy"></i> WS 1 저장</button>
+    </div>
+  </div>
+
+  <!-- ══════════ WS 2 ══════════ -->
+  <div id="panel-ws2" style="display:none" role="tabpanel">
+    <div class="panel-header">
+      <span class="badge badge-teal">WS 2</span>
+      <div class="panel-title">상담자 자기 평가지</div>
+      <div class="panel-sub">실습 종료 후 작성 · 자신의 상담자 역할을 솔직하게 돌아봅니다</div>
+    </div>
+    <div class="panel-body">
+      <div class="grid2">
+        <div class="field"><label class="field-label">이름</label><input type="text" id="ws2-name" placeholder="이름"></div>
+        <div class="field"><label class="field-label">회기 날짜</label><input type="text" id="ws2-date" placeholder="예) 2025-06-03"></div>
+      </div>
+
+      <!-- 체크리스트 -->
+      <div>
+        <div class="section-label"><span class="dot" style="background:#0F6E56"></span>A. 상담 기술 체크리스트</div>
+        <p style="font-size:12px;color:var(--text-sec);margin-bottom:12px;">항목을 클릭해 체크하세요.</p>
+
+        <div class="section-label" style="font-size:11px;"><span class="dot" style="background:#C4622D;width:5px;height:5px;"></span>진로사정</div>
+        <div class="checklist" id="cl-career"></div>
+
+        <div class="section-label" style="font-size:11px;margin-top:12px;"><span class="dot" style="background:#C4622D;width:5px;height:5px;"></span>일상적 하루</div>
+        <div class="checklist" id="cl-daily"></div>
+
+        <div class="section-label" style="font-size:11px;margin-top:12px;"><span class="dot" style="background:#0F6E56;width:5px;height:5px;"></span>강점·약점</div>
+        <div class="checklist" id="cl-sw"></div>
+
+        <div class="section-label" style="font-size:11px;margin-top:12px;"><span class="dot" style="background:#534AB7;width:5px;height:5px;"></span>요약</div>
+        <div class="checklist" id="cl-sum"></div>
+
+        <div style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-sec);margin-bottom:5px;">
+            <span>체크 완료</span><span id="check-count">0 / 11</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" id="check-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- 척도 -->
+      <div>
+        <div class="section-label"><span class="dot" style="background:#0F6E56"></span>단계별 자신감 척도 (1 낮음 → 5 높음)</div>
+        <div style="display:flex;flex-direction:column;gap:12px;" id="scale-area"></div>
+      </div>
+
+      <!-- 서술형 -->
+      <div>
+        <div class="section-label"><span class="dot" style="background:#0F6E56"></span>B. 서술형 자기 성찰</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="field"><label class="field-label">Q1. 오늘 상담자 역할에서 가장 잘됐다고 느낀 순간은?</label><textarea rows="3" id="ws2-q1" placeholder="구체적 상황이나 발화를 떠올려서..."></textarea></div>
+          <div class="field"><label class="field-label">Q2. 가장 어려웠던 질문 또는 상황은? 왜 어려웠나요?</label><textarea rows="3" id="ws2-q2" placeholder="어떤 단계, 어떤 질문이었는지..."></textarea></div>
+          <div class="field"><label class="field-label">Q3. 생애진로주제를 포착하는 데 어떤 단서가 가장 도움이 됐나요?</label><textarea rows="3" id="ws2-q3" placeholder="어떤 단어, 감정, 패턴이 눈에 띄었는지..."></textarea></div>
+          <div class="field"><label class="field-label">Q4. 다음 LCA 상담에서 개선하고 싶은 점 한 가지</label><textarea rows="3" id="ws2-q4" placeholder="구체적으로 무엇을, 어떻게..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="field"><label class="field-label">오늘 실습 한 줄 소감</label><input type="text" id="ws2-oneline" placeholder="한 문장으로 오늘을 표현한다면..."></div>
+      <button class="btn btn-primary" onclick="saveWS('ws2')"><i class="ti ti-device-floppy"></i> WS 2 저장</button>
+    </div>
+  </div>
+
+  <!-- ══════════ WS 3 ══════════ -->
+  <div id="panel-ws3" style="display:none" role="tabpanel">
+    <div class="panel-header">
+      <span class="badge badge-purple">WS 3</span>
+      <div class="panel-title">생애진로주제 분석 & 진로 목표 연결지</div>
+      <div class="panel-sub">상담자·내담자 모두 작성 · PART A~D 각자 작성 후 짝과 비교</div>
+    </div>
+    <div class="panel-body">
+      <div class="grid2">
+        <div class="field"><label class="field-label">내담자 이름</label><input type="text" id="ws3-client" placeholder="내담자 이름"></div>
+        <div class="field">
+          <label class="field-label">작성자 역할</label>
+          <div class="role-row">
+            <div class="role-opt"><input type="radio" name="ws3-role" id="r-counsel" value="상담자"><label for="r-counsel"><i class="ti ti-headset"></i> 상담자</label></div>
+            <div class="role-opt"><input type="radio" name="ws3-role" id="r-client" value="내담자"><label for="r-client"><i class="ti ti-user"></i> 내담자</label></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PART A -->
+      <div class="card">
+        <div class="card-head" style="background:#C4622D;"><i class="ti ti-filter"></i> PART A &nbsp;반복 패턴 수집</div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-sec);">직업·교육·여가·일상 이야기를 통틀어 내담자가 반복 사용한 단어·감정·상황</p>
+          <div class="grid2">
+            <div class="field"><label class="field-label">반복된 단어·표현</label><textarea rows="4" id="pa-words" placeholder="예) 혼자, 사람들, 만들다, 가르치다..."></textarea></div>
+            <div class="field"><label class="field-label">드러난 감정</label><textarea rows="4" id="pa-emotion" placeholder="예) 뿌듯함, 불안, 자유로움, 답답함..."></textarea></div>
+          </div>
+          <div class="field"><label class="field-label">중요하게 여기는 가치관</label><textarea rows="3" id="pa-value" placeholder="예) 자율, 안정, 성취, 관계, 성장..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- PART B -->
+      <div class="card">
+        <div class="card-head" style="background:#534AB7;"><i class="ti ti-tag"></i> PART B &nbsp;생애진로주제 도출</div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-sec);margin-bottom:8px;">PART A의 패턴을 바탕으로 이 내담자의 삶을 관통하는 생애진로주제를 1~3개 도출하세요.</p>
+          <div id="theme-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+      </div>
+
+      <!-- PART C -->
+      <div class="card">
+        <div class="card-head" style="background:#0F6E56;"><i class="ti ti-target"></i> PART C &nbsp;진로 목표 연결</div>
+        <div class="card-body">
+          <div class="field"><label class="field-label">생애진로주제와 맞는 직업 환경은?</label><textarea rows="2" id="pc-env" placeholder="예) 자율성이 높은 환경 / 사람을 돕는 직무 / 창작이 가능한 분야..."></textarea></div>
+          <div class="field"><label class="field-label">강점을 활용할 수 있는 직무·역할은?</label><textarea rows="2" id="pc-role" placeholder="예) 기획, 상담, 교육, 연구, 제작..."></textarea></div>
+          <div class="field"><label class="field-label">약점이 부각될 수 있는 환경을 피한다면?</label><textarea rows="2" id="pc-avoid" placeholder="예) 엄격한 상하관계 / 반복 단순 업무..."></textarea></div>
+          <div class="field"><label class="field-label">단기 진로 행동 목표 (3개월 이내)</label><textarea rows="2" id="pc-goal" placeholder="예) ○○ 자격증 취득 / ○○ 분야 정보 탐색..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- PART D -->
+      <div class="card">
+        <div class="card-head" style="background:#534AB7;"><i class="ti ti-users"></i> PART D &nbsp;짝과 나누기</div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-sec);margin-bottom:8px;">PART B~C를 짝과 교환해 읽고, 서로 다르게 인식한 부분을 중심으로 5분간 대화하세요.</p>
+          <div class="field"><label class="field-label">상담자가 포착한 주제 vs 내담자가 인식한 주제 — 차이가 있었나요?</label><textarea rows="3" id="pd-diff" placeholder="어떤 주제에서 차이가 있었는지..."></textarea></div>
+          <div class="field"><label class="field-label">짝과 나누면서 새롭게 발견한 것 / 내담자에게 가장 울림이 컸던 주제</label><textarea rows="3" id="pd-discover" placeholder="어떤 새로운 시각을 얻었는지..."></textarea></div>
+          <div class="field"><label class="field-label">오늘 실습을 통해 상담자로서 배운 것 한 가지</label><textarea rows="2" id="pd-learn" placeholder="한 문장으로..."></textarea></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveWS('ws3')"><i class="ti ti-device-floppy"></i> WS 3 저장</button>
+    </div>
+  </div>
+
+  <!-- ══════════ 질문 가이드 ══════════ -->
+  <div id="panel-guide" style="display:none" role="tabpanel">
+    <div class="panel-header">
+      <span class="badge badge-orange">상담자용</span>
+      <div class="panel-title">질문 예시 가이드</div>
+      <div class="panel-sub">상담 중 참고용 · 외울 필요 없이 흐름에 맞게 선택</div>
+    </div>
+    <div class="panel-body">
+      <div id="guide-area" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+  </div>
+
+</div><!-- .app -->
+
+<script>
+/* ── 탭 전환 ── */
+var TABS = ['ws1','ws2','ws3','guide'];
+function switchTab(id) {
+  TABS.forEach(function(t) {
+    document.getElementById('panel-'+t).style.display = t===id ? 'block' : 'none';
+    var btn = document.getElementById('tab-'+t);
+    btn.classList.toggle('active', t===id);
+    btn.setAttribute('aria-selected', String(t===id));
+  });
+  window.scrollTo(0, 0);
+}
+
+/* ── 태그 입력 (WS1) ── */
+function initTags() {
+  var input = document.getElementById('tag-input-ws1');
+  var area  = document.getElementById('tag-area-ws1');
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && input.value.trim()) {
+      e.preventDefault();
+      addTag(input.value.trim(), area, input);
+      input.value = '';
+    }
+  });
+}
+function addTag(text, area, input) {
+  var tag = document.createElement('span');
+  tag.className = 'tag';
+  var label = document.createTextNode(text);
+  var del = document.createElement('button');
+  del.className = 'tag-del';
+  del.setAttribute('aria-label', text + ' 삭제');
+  del.textContent = '×';
+  del.onclick = function() { tag.remove(); };
+  tag.appendChild(label);
+  tag.appendChild(del);
+  area.insertBefore(tag, input);
+}
+initTags();
+
+/* ── 강점·약점 행 생성 ── */
+function makeSwRow(type, n) {
+  var div = document.createElement('div');
+  div.className = 'sw-row';
+  var bgColor = type === 'strength' ? 'var(--teal-light)' : 'var(--rose-light)';
+  var textColor = type === 'strength' ? 'var(--teal)' : 'var(--rose)';
+  var label = type === 'strength' ? '강점' : '약점';
+  div.innerHTML =
+    '<div class="sw-label" style="background:'+bgColor+';color:'+textColor+';">'+label+' '+n+'</div>' +
+    '<div class="field"><label class="field-label">내담자가 말한 내용</label><textarea rows="2" placeholder="표현 그대로..."></textarea></div>' +
+    '<div class="field"><label class="field-label">진로 연결 가능성</label><textarea rows="2" placeholder="어떤 직무·환경과 연결?"></textarea></div>';
+  return div;
+}
+var sl = document.getElementById('strength-list');
+var wl = document.getElementById('weakness-list');
+[1,2,3].forEach(function(n) { sl.appendChild(makeSwRow('strength',n)); });
+[1,2,3].forEach(function(n) { wl.appendChild(makeSwRow('weakness',n)); });
+
+/* ── 체크리스트 (WS2) ── */
+var CHECKLISTS = {
+  'cl-career': [
+    '직업경험·교육훈련·여가 세 영역을 고루 탐색했다',
+    "'좋았던 점'뿐 아니라 '싫었던 점'도 이끌어냈다",
+    '내담자가 경험을 구체적으로 말할 수 있도록 후속 질문을 했다'
+  ],
+  'cl-daily': [
+    '독립↔의존, 체계↔임의의 단서를 의식하며 들었다',
+    '내담자가 어색해하지 않도록 질문 이유를 자연스럽게 설명했다'
+  ],
+  'cl-sw': [
+    '강점 3가지를 이끌어내기 위해 구체적 상황 질문을 활용했다',
+    '약점 탐색 시 내담자가 방어적이 되지 않도록 배려했다'
+  ],
+  'cl-sum': [
+    '내담자가 직접 사용한 단어와 표현을 그대로 반영했다',
+    '생애진로주제를 2~3개의 키워드로 포착하여 전달했다',
+    '내담자가 요약에 동의하는지 확인하는 질문을 했다'
+  ]
+};
+var totalChecks = 0;
+Object.keys(CHECKLISTS).forEach(function(id) {
+  var items = CHECKLISTS[id];
+  var el = document.getElementById(id);
+  items.forEach(function(text) {
+    totalChecks++;
+    var div = document.createElement('div');
+    div.className = 'check-item';
+    var box = document.createElement('div');
+    box.className = 'check-box';
+    box.innerHTML = '<i class="ti ti-check" style="font-size:12px;" aria-hidden="true"></i>';
+    var span = document.createElement('span');
+    span.className = 'check-text';
+    span.textContent = text;
+    div.appendChild(box);
+    div.appendChild(span);
+    div.addEventListener('click', function() {
+      div.classList.toggle('checked');
+      updateProgress();
+    });
+    el.appendChild(div);
+  });
+});
+function updateProgress() {
+  var checked = document.querySelectorAll('.check-item.checked').length;
+  document.getElementById('check-count').textContent = checked + ' / ' + totalChecks;
+  document.getElementById('check-bar').style.width = Math.round(checked / totalChecks * 100) + '%';
+}
+
+/* ── 척도 생성 (WS2) ── */
+var SCALES = ['진로사정','일상적 하루','강점·약점 탐색','요약'];
+var scaleArea = document.getElementById('scale-area');
+SCALES.forEach(function(label, si) {
+  var wrap = document.createElement('div');
+  var lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:12px;color:var(--text-sec);margin-bottom:4px;';
+  lbl.textContent = label;
+  var row = document.createElement('div');
+  row.className = 'scale-row';
+  [1,2,3,4,5].forEach(function(v) {
+    var opt = document.createElement('div');
+    opt.className = 'scale-opt';
+    var inp = document.createElement('input');
+    inp.type = 'radio';
+    inp.name = 'scale-'+si;
+    inp.id = 'sc-'+si+'-'+v;
+    inp.value = String(v);
+    var lbEl = document.createElement('label');
+    lbEl.htmlFor = 'sc-'+si+'-'+v;
+    var numSpan = document.createElement('span');
+    numSpan.style.cssText = 'font-size:16px;font-weight:500;';
+    numSpan.textContent = String(v);
+    var txtSpan = document.createElement('span');
+    txtSpan.textContent = v===1 ? '낮음' : v===5 ? '높음' : '';
+    lbEl.appendChild(numSpan);
+    lbEl.appendChild(txtSpan);
+    opt.appendChild(inp);
+    opt.appendChild(lbEl);
+    row.appendChild(opt);
+  });
+  wrap.appendChild(lbl);
+  wrap.appendChild(row);
+  scaleArea.appendChild(wrap);
+});
+
+/* ── 주제 카드 (WS3) ── */
+var themeList = document.getElementById('theme-list');
+[1,2,3].forEach(function(n) {
+  var card = document.createElement('div');
+  card.className = 'theme-card';
+
+  var head = document.createElement('div');
+  head.className = 'theme-card-head';
+  var num = document.createElement('span');
+  num.className = 'theme-num';
+  num.textContent = String(n);
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.placeholder = '주제 키워드 (2~4단어)';
+  inp.style.flex = '1';
+  head.appendChild(num);
+  head.appendChild(inp);
+
+  var gField = document.createElement('div');
+  gField.className = 'field';
+  var gLabel = document.createElement('label');
+  gLabel.className = 'field-label';
+  gLabel.textContent = '뒷받침하는 근거';
+  var gTa = document.createElement('textarea');
+  gTa.rows = 2;
+  gTa.placeholder = '어떤 발화에서 이 주제를 도출했나요?';
+  gField.appendChild(gLabel);
+  gField.appendChild(gTa);
+
+  var strDiv = document.createElement('div');
+  strDiv.innerHTML = '<div class="field-label" style="margin-bottom:6px;">강도</div>';
+  var strRow = document.createElement('div');
+  strRow.className = 'strength-row';
+  [['weak','약'],['mid','중'],['strong','강']].forEach(function(pair) {
+    var cls = pair[0]; var val = pair[1];
+    var opt = document.createElement('div');
+    opt.className = 'str-opt ' + cls;
+    var ri = document.createElement('input');
+    ri.type = 'radio';
+    ri.name = 'th-str-'+n;
+    ri.id = 'tw'+n+'-'+cls;
+    ri.value = val;
+    var rl = document.createElement('label');
+    rl.htmlFor = 'tw'+n+'-'+cls;
+    rl.textContent = val;
+    opt.appendChild(ri);
+    opt.appendChild(rl);
+    strRow.appendChild(opt);
+  });
+  strDiv.appendChild(strRow);
+
+  card.appendChild(head);
+  card.appendChild(gField);
+  card.appendChild(strDiv);
+  themeList.appendChild(card);
+});
+
+/* ── 질문 가이드 ── */
+var GUIDE_DATA = [
+  {
+    label: 'STAGE 01 · 진로사정', color: '#C4622D', icon: 'ti-briefcase',
+    groups: [
+      { title: '(1) 직업경험', color: '#C4622D', qs: [
+        '지금까지 어떤 일을 해오셨나요? 가장 기억에 남는 직장이나 아르바이트부터 이야기해 주세요.',
+        '그 일에서 특히 좋았던 점은 무엇이었나요?',
+        '반대로 힘들었거나 싫었던 점은 무엇인가요?',
+        '아직 직업 경험이 없다면, 가정이나 학교에서 어떤 역할을 맡고 있나요?'
+      ]},
+      { title: '(2) 교육과 훈련', color: '#C4622D', qs: [
+        '학교 생활 중 가장 좋았던 기억, 싫었던 기억이 있다면 말씀해 주세요.',
+        '어떤 과목이나 활동을 좋아했나요? 왜 그랬을까요?',
+        '자격증·직업훈련·특별 교육을 받은 경험이 있으신가요?'
+      ]},
+      { title: '(3) 여가활동', color: '#0F6E56', qs: [
+        '쉬는 날에는 주로 무엇을 하시나요?',
+        '친구와 시간을 보낼 때 주로 어떤 활동을 하나요?',
+        '혼자 있는 시간을 즐기는 편인가요, 사람들과 함께하는 것을 선호하나요?'
+      ]},
+      { tip: '직업·교육·여가 이야기에서 반복되는 감정과 가치관을 주목하세요.\n"좋았던 점"에서 멈추지 말고 "왜 좋았는지"까지 파고드세요.' }
+    ]
+  },
+  {
+    label: 'STAGE 02 · 일상적 하루', color: '#C4622D', icon: 'ti-clock',
+    groups: [
+      { title: '핵심 탐색 질문', color: '#C4622D', qs: [
+        '평소 아침에 몇 시에 일어나세요?',
+        '스스로 일어나시나요, 아니면 누군가가 깨워주나요?',
+        '아침 루틴이 있으신가요? 일어나서 무엇부터 하시나요?',
+        '출근·등교 후 가장 먼저 무엇을 하시나요?',
+        '퇴근·방과 후 시간은 보통 어떻게 보내시나요?',
+        '잠자리에 드는 시간은 규칙적인 편인가요?'
+      ]},
+      { tip: '분석 기준: 독립적↔의존적 | 체계적↔임의적\n일관된 패턴이 생애진로주제로 이어집니다.\n\n내담자가 "왜 이걸 물어봐요?"라고 하면:\n"어떻게 하루를 살고 있는지 알면, 어떤 환경이 잘 맞는지 함께 이해할 수 있습니다."' }
+    ]
+  },
+  {
+    label: 'STAGE 03 · 강점 및 약점', color: '#0F6E56', icon: 'ti-star',
+    groups: [
+      { title: '강점 탐색', color: '#0F6E56', qs: [
+        '강점 3가지를 말씀해 주세요.',
+        '(강점이 2개뿐이면) 일상에서 잘한다고 느끼는 것은요?',
+        '그 강점이 어떤 상황에서 특히 빛을 발했나요?'
+      ]},
+      { title: '약점 탐색', color: '#993556', qs: [
+        '약점은 어떤 것이 있을까요?',
+        '그 약점 때문에 어려웠던 경험이 있으신가요?',
+        '직업·진로와 관련해 극복해야 할 장애물이 있다면?'
+      ]},
+      { tip: '강점 3개를 못 말하는 경우:\n"먼저 하나만 말씀해볼까요?"로 시작하세요.\n그리고 "그 강점이 빛났던 순간이 있었나요?"로 이어가면 자연스럽게 더 나옵니다.' }
+    ]
+  },
+  {
+    label: 'STAGE 04 · 요약', color: '#534AB7', icon: 'ti-align-left',
+    groups: [
+      { title: '요약 및 주제 명료화', color: '#534AB7', qs: [
+        '오늘 이야기 나누면서 자신에 대해 새롭게 알게 된 것이 있나요?',
+        '여러 이야기를 관통하는 공통된 주제가 보이시나요?',
+        '강점과 약점을 고려할 때 어떤 방향으로 진로를 탐색하고 싶으신가요?',
+        '제가 이렇게 이해했는데, 맞게 들었나요? (요약 후 확인 질문)'
+      ]},
+      { tip: '요약의 핵심은 내담자의 언어를 그대로 사용하는 것입니다.\n\n나쁜 예: "당신은 자율성을 중요하게 여기는 분 같습니다."\n좋은 예: "혼자서 결정할 때 잘 된다고 하셨잖아요."\n\n요약 후 반드시 내담자에게 확인하세요.' }
+    ]
+  }
+];
+
+var guideArea = document.getElementById('guide-area');
+GUIDE_DATA.forEach(function(stage, si) {
+  var wrap = document.createElement('div');
+  wrap.className = 'guide-stage';
+
+  var head = document.createElement('div');
+  head.className = 'guide-stage-head';
+  head.style.background = stage.color;
+  head.innerHTML =
+    '<div class="head-left"><i class="ti '+stage.icon+'" aria-hidden="true"></i> '+stage.label+'</div>' +
+    '<i class="ti ti-chevron-down chevron" aria-hidden="true"></i>';
+  head.addEventListener('click', function() {
+    var body = document.getElementById('gbody-'+si);
+    var isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    head.classList.toggle('open', !isOpen);
+  });
+
+  var body = document.createElement('div');
+  body.className = 'guide-stage-body';
+  body.id = 'gbody-'+si;
+
+  stage.groups.forEach(function(g) {
+    if (g.tip) {
+      var tipDiv = document.createElement('div');
+      tipDiv.className = 'tip-box';
+      tipDiv.style.borderLeftColor = stage.color;
+      var b = document.createElement('b');
+      b.textContent = 'TIP';
+      tipDiv.appendChild(b);
+      tipDiv.appendChild(document.createTextNode(g.tip));
+      body.appendChild(tipDiv);
+    } else {
+      var gDiv = document.createElement('div');
+      gDiv.className = 'guide-group';
+      var gtitle = document.createElement('div');
+      gtitle.className = 'guide-group-title';
+      gtitle.textContent = g.title;
+      gDiv.appendChild(gtitle);
+      g.qs.forEach(function(q, qi) {
+        var qDiv = document.createElement('div');
+        qDiv.className = 'guide-q';
+        var qn = document.createElement('span');
+        qn.className = 'q-num';
+        qn.style.cssText = 'background:'+g.color+'22;color:'+g.color+';';
+        qn.textContent = String(qi+1);
+        qDiv.appendChild(qn);
+        qDiv.appendChild(document.createTextNode(q));
+        gDiv.appendChild(qDiv);
+      });
+      body.appendChild(gDiv);
+    }
+  });
+
+  wrap.appendChild(head);
+  wrap.appendChild(body);
+  guideArea.appendChild(wrap);
+});
+
+/* ── 저장·불러오기 (localStorage) ── */
+function collectWS(id) {
+  var data = {};
+  var panel = document.getElementById('panel-'+id);
+  var inputs = panel.querySelectorAll('input[type="text"][id], textarea[id]');
+  inputs.forEach(function(el) { data[el.id] = el.value; });
+  if (id === 'ws1') {
+    var tags = [];
+    document.querySelectorAll('#tag-area-ws1 .tag').forEach(function(t) {
+      tags.push(t.firstChild.textContent);
+    });
+    data['__tags_ws1'] = tags;
+  }
+  if (id === 'ws2') {
+    var checks = [];
+    document.querySelectorAll('.check-item').forEach(function(el, i) {
+      checks.push(el.classList.contains('checked'));
+    });
+    data['__checks'] = checks;
+    var scales = {};
+    document.querySelectorAll('input[type="radio"][name^="scale-"]:checked').forEach(function(r) {
+      scales[r.name] = r.value;
+    });
+    data['__scales'] = scales;
+    var roleEl = document.querySelector('input[name="ws3-role"]:checked');
+    if (roleEl) data['__ws3-role'] = roleEl.value;
+  }
+  if (id === 'ws3') {
+    var roleEl2 = document.querySelector('input[name="ws3-role"]:checked');
+    if (roleEl2) data['__ws3-role'] = roleEl2.value;
+    var strengths = [];
+    document.querySelectorAll('#theme-list .theme-card').forEach(function(card, n) {
+      var inp = card.querySelector('input[type="text"]');
+      var ri = card.querySelector('input[type="radio"]:checked');
+      strengths.push({ keyword: inp ? inp.value : '', strength: ri ? ri.value : '' });
+    });
+    data['__themes'] = strengths;
+  }
+  return data;
+}
+
+function saveWS(id) {
+  try {
+    localStorage.setItem('lca-'+id, JSON.stringify(collectWS(id)));
+  } catch(e) {}
+  var btn = document.querySelector('#panel-'+id+' .btn-primary');
+  var orig = btn.innerHTML;
+  btn.className = 'btn btn-success';
+  btn.innerHTML = '<i class="ti ti-check"></i> 저장 완료!';
+  setTimeout(function() {
+    btn.className = 'btn btn-primary';
+    btn.innerHTML = orig;
+  }, 2000);
+}
+
+function loadAll() {
+  ['ws1','ws2','ws3'].forEach(function(id) {
+    try {
+      var saved = JSON.parse(localStorage.getItem('lca-'+id) || 'null');
+      if (!saved) return;
+      var panel = document.getElementById('panel-'+id);
+      Object.keys(saved).forEach(function(k) {
+        if (k.startsWith('__')) return;
+        var el = panel ? panel.querySelector('#'+k) : null;
+        if (el) el.value = saved[k];
+      });
+      if (id === 'ws1' && saved['__tags_ws1']) {
+        var area = document.getElementById('tag-area-ws1');
+        var input = document.getElementById('tag-input-ws1');
+        saved['__tags_ws1'].forEach(function(t) { addTag(t, area, input); });
+      }
+      if (id === 'ws2' && saved['__checks']) {
+        var items = document.querySelectorAll('.check-item');
+        saved['__checks'].forEach(function(v, i) {
+          if (items[i] && v) { items[i].classList.add('checked'); }
+        });
+        updateProgress();
+      }
+      if (id === 'ws2' && saved['__scales']) {
+        Object.keys(saved['__scales']).forEach(function(name) {
+          var r = document.querySelector('input[name="'+name+'"][value="'+saved['__scales'][name]+'"]');
+          if (r) r.checked = true;
+        });
+      }
+      if (saved['__ws3-role']) {
+        var r = document.querySelector('input[name="ws3-role"][value="'+saved['__ws3-role']+'"]');
+        if (r) r.checked = true;
+      }
+    } catch(e) {}
+  });
+}
+loadAll();
+</script>
+</body>
+</html>
